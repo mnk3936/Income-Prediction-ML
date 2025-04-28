@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# --- Load the trained model ---
+# --- Load the trained model and encoders ---
 grid_search = joblib.load('model.pkl')
-
-# --- Load the label encoders ---
 workclass_encoder = joblib.load('workclass_encoder.pkl')
 education_encoder = joblib.load('education_encoder.pkl')
 marital_encoder = joblib.load('marital_encoder.pkl')
@@ -14,38 +12,55 @@ race_encoder = joblib.load('race_encoder.pkl')
 sex_encoder = joblib.load('sex_encoder.pkl')
 native_encoder = joblib.load('native_encoder.pkl')
 
-# --- Streamlit App ---
-st.set_page_config(page_title="Income Prediction", page_icon="💰")
-st.title('💰 Income Prediction App')
-st.write('Fill in the details below to predict whether an individual earns more than $50K per year.')
+# --- Streamlit Page Config ---
+st.set_page_config(page_title="Income Prediction", page_icon="💰", layout="wide")
 
-# --- Dropdown Options (Original Readable Categories) ---
-workclass_options = ['State-gov', 'Self-emp-not-inc', 'Private', 'Federal-gov', 'Local-gov', 'Self-emp-inc', 'Without-pay', 'Never-worked']
-education_options = ['Bachelors', 'Some-college', '11th', 'HS-grad', 'Assoc-acdm', 'Assoc-voc', '10th', '7th-8th', '9th', '12th', 'Masters', 'Doctorate']
-marital_status_options = ['Never-married', 'Married-civ-spouse', 'Divorced', 'Married-spouse-absent', 'Separated', 'Married-AF-spouse', 'Widowed']
-occupation_options = ['Adm-clerical', 'Exec-managerial', 'Tech-support', 'Prof-specialty', 'Craft-repair', 'Transport-moving', 'Handlers-cleaners', 'Farming-fishing', 'Machine-op-inspct', 'Other-service']
-race_options = ['White', 'Asian-Pac-Islander', 'Amer-Indian-Eskimo', 'Other', 'Black']
-sex_options = ['Male', 'Female']
-native_country_options = ['United-States', 'India', 'Mexico', 'Philippines', 'Germany', 'Iran', 'China', 'Cuba', 'South', 'Jamaica']
+# --- Sidebar for Input ---
+st.sidebar.title("💼 User Information")
 
-# --- Collect user input ---
-st.header("User Details")
-age = st.number_input('Age', min_value=0, max_value=100, value=30, step=1)
-education_num = st.number_input('Education Number', min_value=0, max_value=20, value=10, step=1)
-hours_per_week = st.number_input('Hours per Week', min_value=0, max_value=100, value=40, step=1)
+st.sidebar.header("Personal Details")
+age = st.sidebar.slider('Age', 18, 100, 30)
+education_num = st.sidebar.slider('Education Number', 1, 20, 10)
+hours_per_week = st.sidebar.slider('Hours per Week', 1, 100, 40)
 
-workclass = st.selectbox('Workclass', workclass_options)
-education = st.selectbox('Education', education_options)
-marital_status = st.selectbox('Marital Status', marital_status_options)
-occupation = st.selectbox('Occupation', occupation_options)
-race = st.selectbox('Race', race_options)
-sex = st.selectbox('Sex', sex_options)
-native_country = st.selectbox('Native Country', native_country_options)
+st.sidebar.header("Categorical Details")
+workclass = st.sidebar.selectbox('Workclass', [
+    'State-gov', 'Self-emp-not-inc', 'Private', 'Federal-gov', 'Local-gov', 'Self-emp-inc', 'Without-pay', 'Never-worked'
+])
+education = st.sidebar.selectbox('Education', [
+    'Bachelors', 'Some-college', '11th', 'HS-grad', 'Assoc-acdm', 'Assoc-voc', 
+    '10th', '7th-8th', '9th', '12th', 'Masters', 'Doctorate'
+])
+marital_status = st.sidebar.selectbox('Marital Status', [
+    'Never-married', 'Married-civ-spouse', 'Divorced', 'Married-spouse-absent', 
+    'Separated', 'Married-AF-spouse', 'Widowed'
+])
+occupation = st.sidebar.selectbox('Occupation', [
+    'Adm-clerical', 'Exec-managerial', 'Tech-support', 'Prof-specialty', 'Craft-repair',
+    'Transport-moving', 'Handlers-cleaners', 'Farming-fishing', 'Machine-op-inspct', 'Other-service'
+])
+race = st.sidebar.selectbox('Race', [
+    'White', 'Asian-Pac-Islander', 'Amer-Indian-Eskimo', 'Other', 'Black'
+])
+sex = st.sidebar.radio('Sex', ['Male', 'Female'])
+native_country = st.sidebar.selectbox('Native Country', [
+    'United-States', 'India', 'Mexico', 'Philippines', 'Germany', 
+    'Iran', 'China', 'Cuba', 'South', 'Jamaica'
+])
 
-# --- Prediction ---
-if st.button('Predict Income'):
+# --- Main Area ---
+st.title("💰 Income Prediction App")
+st.write("Provide your information on the sidebar and click **Predict Income** to see the result.")
+
+st.image("https://cdn-icons-png.flaticon.com/512/3135/3135768.png", width=150)  # Optional: nice avatar
+
+st.markdown("---")
+
+# --- Predict Button ---
+if st.button('🎯 Predict Income'):
+
     try:
-        # Prepare the input data
+        # Prepare input data
         input_data = pd.DataFrame({
             'age': [age],
             'workclass': [workclass],
@@ -59,7 +74,7 @@ if st.button('Predict Income'):
             'native-country': [native_country]
         })
 
-        # Apply Label Encoding to input
+        # Encode categorical variables
         input_data['workclass'] = workclass_encoder.transform([workclass])[0]
         input_data['education'] = education_encoder.transform([education])[0]
         input_data['marital-status'] = marital_encoder.transform([marital_status])[0]
@@ -70,10 +85,15 @@ if st.button('Predict Income'):
 
         # Make prediction
         prediction = grid_search.predict(input_data)
+        result = ">50K" if prediction[0] == 1 else "<=50K"
 
-        # Display Result
-        result = '>50K' if prediction[0] == 1 else '<=50K'
-        st.success(f'🎯 Predicted Income: {result}')
+        # Display result
+        st.success(f"🎉 Predicted Income Class: **{result}**")
 
     except Exception as e:
-        st.error(f"Error during prediction: {e}")
+        st.error(f"❌ Error during prediction: {e}")
+
+# --- Footer ---
+st.markdown("---")
+st.caption("Made with ❤️ by YourName | Powered by Streamlit")
+
