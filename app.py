@@ -95,5 +95,5 @@ if st.button('🎯 Predict Income'):
 
 # --- Footer ---
 st.markdown("---")
-st.caption("Made with ❤️ by NADEEM | Powered by Streamlit")
+st.caption("Made with ❤️ by NADEEM ")
 
